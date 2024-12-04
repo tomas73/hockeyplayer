@@ -1,0 +1,32 @@
+#!/usr/bin/python
+import shutil
+import os
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+from dotenv import load_dotenv
+
+load_dotenv('credentials')
+
+# Authenticate
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+    client_id=os.getenv('CLIENT_ID'),
+    client_secret=os.getenv('CLIENT_SECRET'),
+    redirect_uri=os.getenv('REDIRECT_URI'),
+    scope="user-read-playback-state user-modify-playback-state"
+))
+
+# Test the connection
+me = sp.current_user()
+print(f"Logged in as {me['display_name']}")
+
+source = ".cache"
+destination = "spotify_token.json"
+
+try:
+    if os.path.exists(destination) and os.path.isfile(destination):
+        os.remove(destination)  # Remove existing file to mimic `mv` behavior
+    shutil.move(source, destination)
+    print(f"Moved {source} to {destination}")
+except Exception as e:
+    print(f"Error: {e}")
+

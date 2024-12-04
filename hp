@@ -1,0 +1,137 @@
+#!/usr/bin/python
+import tkinter as tk
+from tkinter import messagebox
+import spotipy
+import random
+import time
+import json
+import os
+from spotipy.oauth2 import SpotifyOAuth
+import requests
+
+##https://open.spotify.com/playlist/37i9dQZF1DX3IN93M08EFq?si=c36bec43deb04edc
+# Playlist details
+ORGAN_LIST_ID = "43LQJlHayUNcFUIwLXMDAg"
+HOCKEY_ANTHEMS_ID = "1OuXhSkiYtYLAR9PvYaVuM"
+PLAYLIST1_ID = "37i9dQZF1DX3IN93M08EFq"  # Spela Shoreline 
+DEVICE_ID = "16df037053cb3bb62ed59b023a1ecc31c05891ae"  # IPhone
+INTRO_ID = "spotify:track:4VPdi04HiOUxNbf0wMayC8"
+GOAL_ID = "spotify:track:7ADMiPeAzMjAO4uIP0ZZWT"
+
+# Path to token storage file
+TOKEN_FILE = "spotify_token.json"
+
+# Load token from file
+def load_token():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as file:
+            return json.load(file)
+    return None
+
+def get_access_token():
+    token_data = load_token()
+    if not token_data:
+        raise Exception("No token found. Please authenticate manually.")
+
+    return token_data["access_token"]
+
+# Function to be called every minute
+def refresh_token_if_needed():
+    token_data = load_token()
+
+    if not token_data:
+        raise Exception("No token found. Please authenticate manually.")
+
+    # Check if the token has expired and refresh it
+    current_time = time.time()
+    if current_time >= token_data["expires_at"]:
+        print("Token expired, refreshing...")
+        refresh_access_token(token_data["refresh_token"])
+    
+    # Schedule the function to be called again in 1 minute (60000 milliseconds)
+    root.after(60000, refresh_token_if_needed)
+
+# Function to handle button click
+def on_button_click():
+    messagebox.showinfo("Button Clicked", "You clicked the button!")
+
+# Start playing the playlist
+def play_playlist(playlist_id):
+    # Get access token first (refresh if needed)
+    access_token = get_access_token()
+
+    # Use the access token to create the Spotify client
+    sp = spotipy.Spotify(auth=access_token)
+    # Load the playlist and start playing it
+    sp.start_playback(device_id=DEVICE_ID, context_uri=f"spotify:playlist:{playlist_id}")
+
+def play_anthems():
+    play_playlist(HOCKEY_ANTHEMS_ID)
+
+def play_organ():
+    play_playlist(ORGAN_LIST_ID)
+
+def play_track(track):
+    # Get access token first (refresh if needed)
+    access_token = get_access_token()
+
+    # Use the access token to create the Spotify client
+    sp = spotipy.Spotify(auth=access_token)
+    sp.start_playback(device_id=DEVICE_ID, uris=[track])
+    
+def play_intro():
+    play_track(INTRO_ID)
+
+def play_goal():
+    play_track(GOAL_ID)
+
+# Pause playback
+def pause_playback():
+    # Get access token first (refresh if needed)
+    access_token = get_access_token()
+
+    # Use the access token to create the Spotify client
+    sp = spotipy.Spotify(auth=access_token)
+    sp.pause_playback()
+
+# Skip to the next song
+def skip_to_next(sp, device_id):
+    sp.next_track(device_id=device_id)
+
+# Create the main window
+root = tk.Tk()
+root.title("Hockey Player")
+root.geometry("300x600")  # Set window size
+
+# Add a label
+label = tk.Label(root, text="Go Järfälla!", font=("Arial", 14))
+label.pack(pady=20)
+
+# Add a button
+button_anthems = tk.Button(root, text="Anthems", command=play_anthems, font=("Arial", 12))
+button_anthems.pack(pady=10)
+button_organ = tk.Button(root, text="Orgel", command=play_organ, font=("Arial", 12))
+button_organ.pack(pady=10)
+button_pause = tk.Button(root, text="Pause", command=pause_playback, font=("Arial", 12))
+button_pause.pack(pady=10)
+button_intro = tk.Button(root, text="Intro", command=play_intro, font=("Arial", 12))
+button_intro.pack(pady=10)
+button_goal = tk.Button(root, text="GOAL", command=play_goal, font=("Arial", 18), bg="green")
+button_goal.pack(pady=10)
+
+# Add another button with a different action
+exit_button = tk.Button(root, text="Exit", command=root.quit, font=("Arial", 12))
+exit_button.pack(pady=10)
+
+# Start the periodic function
+refresh_token_if_needed()
+sp = None
+# Get access token first (refresh if needed)
+access_token = get_access_token()
+
+# Use the access token to create the Spotify client
+sp = spotipy.Spotify(auth=access_token)
+sp.shuffle(state=True, device_id=DEVICE_ID)
+
+# Run the GUI event loop
+root.mainloop()
