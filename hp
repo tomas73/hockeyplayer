@@ -8,13 +8,16 @@ import json
 import os
 from spotipy.oauth2 import SpotifyOAuth
 import requests
+from dotenv import load_dotenv
+
+load_dotenv('credentials')
 
 ##https://open.spotify.com/playlist/37i9dQZF1DX3IN93M08EFq?si=c36bec43deb04edc
 # Playlist details
 ORGAN_LIST_ID = "43LQJlHayUNcFUIwLXMDAg"
 HOCKEY_ANTHEMS_ID = "1OuXhSkiYtYLAR9PvYaVuM"
 PLAYLIST1_ID = "37i9dQZF1DX3IN93M08EFq"  # Spela Shoreline 
-DEVICE_ID = "16df037053cb3bb62ed59b023a1ecc31c05891ae"  # IPhone
+DEVICE_ID = os.getenv('DEVICE')
 INTRO_ID = "spotify:track:4VPdi04HiOUxNbf0wMayC8"
 GOAL_ID = "spotify:track:7ADMiPeAzMjAO4uIP0ZZWT"
 

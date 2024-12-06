@@ -1,0 +1,42 @@
+#!/usr/bin/python
+#
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+import json
+import os
+
+# Path to token storage file
+TOKEN_FILE = "spotify_token.json"
+
+# Load token from file
+def load_token():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as file:
+            return json.load(file)
+    return None
+
+# Get access token from stored token
+def get_access_token():
+    token_data = load_token()
+    if not token_data:
+        raise Exception("No token found. Please authenticate manually.")
+    
+    return token_data["access_token"]
+
+# List available devices
+def list_devices():
+    access_token = get_access_token()
+    sp = spotipy.Spotify(auth=access_token)
+
+    # Get the list of devices
+    devices = sp.devices()
+    if devices['devices']:
+        print("Available devices:")
+        for device in devices['devices']:
+            print(f"Device name: {device['name']}, Device ID: {device['id']}")
+    else:
+        print("No devices found.")
+
+if __name__ == "__main__":
+    list_devices()
+
