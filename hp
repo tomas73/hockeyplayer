@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import shutil
 import tkinter as tk
 from tkinter import messagebox
 import spotipy
@@ -16,6 +17,7 @@ load_dotenv('credentials')
 # Playlist details
 ORGAN_LIST_ID = "43LQJlHayUNcFUIwLXMDAg"
 HOCKEY_ANTHEMS_ID = "1OuXhSkiYtYLAR9PvYaVuM"
+HOCKEY_PENALTY_ID = "6ddw0l6cz5yMyrdxm0aZ2E"
 PLAYLIST1_ID = "37i9dQZF1DX3IN93M08EFq"  # Spela Shoreline 
 DEVICE_ID = os.getenv('DEVICE')
 INTRO_ID = "spotify:track:4VPdi04HiOUxNbf0wMayC8"
@@ -23,6 +25,32 @@ GOAL_ID = "spotify:track:7ADMiPeAzMjAO4uIP0ZZWT"
 
 # Path to token storage file
 TOKEN_FILE = "spotify_token.json"
+
+
+def authenticate():
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+        client_id=os.getenv('CLIENT_ID'),
+        client_secret=os.getenv('CLIENT_SECRET'),
+        redirect_uri=os.getenv('REDIRECT_URI'),
+        scope="user-read-playback-state user-modify-playback-state"
+        ))
+    
+
+    # Test the connection
+    me = sp.current_user()
+    print(f"Logged in as {me['display_name']}")
+
+    source = ".cache"
+    destination = "spotify_token.json"
+
+    try:
+        if os.path.exists(destination) and os.path.isfile(destination):
+            os.remove(destination)  # Remove existing file to mimic `mv` behavior
+        shutil.move(source, destination)
+        print(f"Moved {source} to {destination}")
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 # Load token from file
 def load_token():
@@ -74,6 +102,9 @@ def play_anthems():
 def play_organ():
     play_playlist(ORGAN_LIST_ID)
 
+def play_penalty():
+    play_playlist(HOCKEY_PENALTY_ID)
+
 def play_track(track):
     # Get access token first (refresh if needed)
     access_token = get_access_token()
@@ -104,28 +135,34 @@ def skip_to_next(sp, device_id):
 # Create the main window
 root = tk.Tk()
 root.title("Hockey Player")
-root.geometry("300x600")  # Set window size
+root.geometry("200x600")  # Set window size
 
 # Add a label
 label = tk.Label(root, text="Go Järfälla!", font=("Arial", 14))
 label.pack(pady=20)
 
 # Add a button
-button_anthems = tk.Button(root, text="Anthems", command=play_anthems, font=("Arial", 12))
-button_anthems.pack(pady=10)
-button_organ = tk.Button(root, text="Orgel", command=play_organ, font=("Arial", 12))
-button_organ.pack(pady=10)
-button_pause = tk.Button(root, text="Pause", command=pause_playback, font=("Arial", 12))
+button_pause = tk.Button(root, text="Pause", command=pause_playback, font=("Arial", 18), bg="yellow")
 button_pause.pack(pady=10)
-button_intro = tk.Button(root, text="Intro", command=play_intro, font=("Arial", 12))
-button_intro.pack(pady=10)
+button_anthems = tk.Button(root, text="Play", command=play_anthems, font=("Arial", 18), bg="blue", fg="white")
+button_anthems.pack(pady=10)
 button_goal = tk.Button(root, text="GOAL", command=play_goal, font=("Arial", 18), bg="green")
 button_goal.pack(pady=10)
+button_penalty= tk.Button(root, text="Utvisning", command=play_penalty, font=("Arial", 18), bg="red")
+button_penalty.pack(pady=10)
+button_organ = tk.Button(root, text="Orgel", command=play_organ, font=("Arial", 12))
+button_organ.pack(pady=10)
+button_intro = tk.Button(root, text="Intro", command=play_intro, font=("Arial", 12))
+button_intro.pack(pady=10)
+button_auth= tk.Button(root, text="Authenticate", command=authenticate, font=("Arial", 12))
+button_auth.pack(pady=10)
 
 # Add another button with a different action
 exit_button = tk.Button(root, text="Exit", command=root.quit, font=("Arial", 12))
 exit_button.pack(pady=10)
 
+# Authenticate
+authenticate()
 # Start the periodic function
 refresh_token_if_needed()
 sp = None
