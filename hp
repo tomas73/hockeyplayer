@@ -27,6 +27,26 @@ GOAL_ID = "spotify:track:7ADMiPeAzMjAO4uIP0ZZWT"
 TOKEN_FILE = "spotify_token.json"
 
 
+def time_to_ms(minutes=0, seconds=0, hours=0):
+    return (hours * 3600 + minutes * 60 + seconds) * 1000# Load token from file
+
+def load_token():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as file:
+            return json.load(file)
+    return None
+
+def get_access_token():
+    token_data = load_token()
+    if not token_data:
+        raise Exception("No token found. Please authenticate manually.")
+
+    return token_data["access_token"]
+
+def remind_authenticate():
+    button_auth.config(bg="red")
+    button_auth.flash()
+    
 def authenticate():
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
         client_id=os.getenv('CLIENT_ID'),
@@ -51,53 +71,27 @@ def authenticate():
     except Exception as e:
         print(f"Error: {e}")
 
+    button_auth.config(bg=default_button_color)
+    root.after(time_to_ms(minutes=20), remind_authenticate)
 
-# Load token from file
-def load_token():
-    if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, "r") as file:
-            return json.load(file)
-    return None
 
-def get_access_token():
-    token_data = load_token()
-    if not token_data:
-        raise Exception("No token found. Please authenticate manually.")
-
-    return token_data["access_token"]
-
-# Function to be called every minute
-def refresh_token_if_needed():
-    token_data = load_token()
-
-    if not token_data:
-        raise Exception("No token found. Please authenticate manually.")
-
-    # Check if the token has expired and refresh it
-    current_time = time.time()
-    if current_time >= token_data["expires_at"]:
-        print("Token expired, refreshing...")
-        refresh_access_token(token_data["refresh_token"])
-    
-    # Schedule the function to be called again in 1 minute (60000 milliseconds)
-    root.after(60000, refresh_token_if_needed)
 
 # Function to handle button click
 def on_button_click():
     messagebox.showinfo("Button Clicked", "You clicked the button!")
 
 # Start playing the playlist
-def play_playlist(playlist_id):
+def play_playlist(playlist_id, skip_ms=0):
     # Get access token first (refresh if needed)
     access_token = get_access_token()
 
     # Use the access token to create the Spotify client
     sp = spotipy.Spotify(auth=access_token)
     # Load the playlist and start playing it
-    sp.start_playback(device_id=DEVICE_ID, context_uri=f"spotify:playlist:{playlist_id}")
+    sp.start_playback(device_id=DEVICE_ID, context_uri=f"spotify:playlist:{playlist_id}", position_ms=skip_ms)
 
 def play_anthems():
-    play_playlist(HOCKEY_ANTHEMS_ID)
+    play_playlist(HOCKEY_ANTHEMS_ID, 40000)
 
 def play_organ():
     play_playlist(ORGAN_LIST_ID)
@@ -135,7 +129,7 @@ def skip_to_next(sp, device_id):
 # Create the main window
 root = tk.Tk()
 root.title("Hockey Player")
-root.geometry("200x600")  # Set window size
+root.geometry("150x600+0+0")  # Set window size
 
 # Add a label
 label = tk.Label(root, text="Go Järfälla!", font=("Arial", 14))
@@ -143,28 +137,35 @@ label.pack(pady=20)
 
 # Add a button
 button_pause = tk.Button(root, text="Pause", command=pause_playback, font=("Arial", 18), bg="yellow")
-button_pause.pack(pady=10)
+button_pause.config(height=2, width=7)
+button_pause.pack(pady=5)
 button_anthems = tk.Button(root, text="Play", command=play_anthems, font=("Arial", 18), bg="blue", fg="white")
-button_anthems.pack(pady=10)
+button_anthems.pack(pady=5)
+button_anthems.config(height=1, width=7)
 button_goal = tk.Button(root, text="GOAL", command=play_goal, font=("Arial", 18), bg="green")
-button_goal.pack(pady=10)
-button_penalty= tk.Button(root, text="Utvisning", command=play_penalty, font=("Arial", 18), bg="red")
-button_penalty.pack(pady=10)
-button_organ = tk.Button(root, text="Orgel", command=play_organ, font=("Arial", 12))
-button_organ.pack(pady=10)
-button_intro = tk.Button(root, text="Intro", command=play_intro, font=("Arial", 12))
-button_intro.pack(pady=10)
-button_auth= tk.Button(root, text="Authenticate", command=authenticate, font=("Arial", 12))
-button_auth.pack(pady=10)
+button_goal.pack(pady=5)
+button_goal.config(height=1, width=7)
+button_penalty= tk.Button(root, text="Penalty", command=play_penalty, font=("Arial", 18), bg="red")
+button_penalty.pack(pady=5)
+button_organ = tk.Button(root, text="Organ", command=play_organ, font=("Arial", 18))
+button_organ.config(height=1, width=7)
+button_organ.pack(pady=5)
+button_intro = tk.Button(root, text="Intro", command=play_intro, font=("Arial", 18))
+button_intro.config(height=1, width=7)
+button_intro.pack(pady=5)
+button_auth= tk.Button(root, text="Auth", command=authenticate, font=("Arial", 18))
+button_auth.config(height=1, width=7)
+button_auth.pack(pady=5)
+default_button_color=orig_color=button_auth.cget("background")
 
 # Add another button with a different action
-exit_button = tk.Button(root, text="Exit", command=root.quit, font=("Arial", 12))
-exit_button.pack(pady=10)
+exit_button = tk.Button(root, text="Exit", command=root.quit, font=("Arial", 18))
+exit_button.config(height=1, width=7)
+exit_button.pack(pady=5)
 
 # Authenticate
 authenticate()
-# Start the periodic function
-refresh_token_if_needed()
+
 sp = None
 # Get access token first (refresh if needed)
 access_token = get_access_token()
