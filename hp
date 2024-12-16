@@ -16,38 +16,65 @@ load_dotenv('credentials')
 ##https://open.spotify.com/playlist/37i9dQZF1DX3IN93M08EFq?si=c36bec43deb04edc
 # Playlist details
 ORGAN_LIST_ID = "43LQJlHayUNcFUIwLXMDAg"
-HOCKEY_ANTHEMS_ID = "1OuXhSkiYtYLAR9PvYaVuM"
 HOCKEY_PENALTY_ID = "6ddw0l6cz5yMyrdxm0aZ2E"
 PLAYLIST1_ID = "37i9dQZF1DX3IN93M08EFq"  # Spela Shoreline 
 DEVICE_ID = os.getenv('DEVICE')
 INTRO_ID = "spotify:track:4VPdi04HiOUxNbf0wMayC8"
 GOAL_ID = "spotify:track:7ADMiPeAzMjAO4uIP0ZZWT"
 
+anthems_url = "https://open.spotify.com/playlist/1OuXhSkiYtYLAR9PvYaVuM?si=ec77877e41ed4c94"
+music_url = "https://open.spotify.com/playlist/65BImTLy02TElffIlPcfMr?si=66c5152a76624f51"
+
+anthems_id = "1OuXhSkiYtYLAR9PvYaVuM"
+music_id = "65BImTLy02TElffIlPcfMr"
+
 # Path to token storage file
 TOKEN_FILE = "spotify_token.json"
 
 
+
+# Function to get the text from the Entry field
+def get_text():
+    content = entry.get()
+    print("Content:", content)
+
 def time_to_ms(minutes=0, seconds=0, hours=0):
     return (hours * 3600 + minutes * 60 + seconds) * 1000# Load token from file
 
-def load_token():
-    if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, "r") as file:
-            return json.load(file)
-    return None
+#def load_token():
+#    if os.path.exists(TOKEN_FILE):
+#        with open(TOKEN_FILE, "r") as file:
+#            return json.load(file)
+#    return None
 
-def get_access_token():
-    token_data = load_token()
-    if not token_data:
-        raise Exception("No token found. Please authenticate manually.")
-
-    return token_data["access_token"]
+#def get_access_token():
+#    token_data = load_token()
+#    if not token_data:
+#        raise Exception("No token found. Please authenticate manually.")#
+#
+#    return token_data["access_token"]
 
 def remind_authenticate():
     button_auth.config(bg="red")
     button_auth.flash()
-    
+
+# Authenticate, (and update playlists)
 def authenticate():
+    global sp
+    global anthems_id
+    global music_id
+
+    url=edit1.get();
+    playlist_part = url.split("/playlist/")[-1]
+    anthems_id = playlist_part.split("?")[0]
+
+    print(anthems_id)
+
+    url=edit2.get();
+    playlist_part = url.split("/playlist/")[-1]
+    music_id = playlist_part.split("?")[0]
+    print(music_id)
+
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
         client_id=os.getenv('CLIENT_ID'),
         client_secret=os.getenv('CLIENT_SECRET'),
@@ -74,19 +101,17 @@ def authenticate():
     button_auth.config(bg=default_button_color)
     root.after(time_to_ms(minutes=20), remind_authenticate)
 
-
-
-# Function to handle button click
-def on_button_click():
-    messagebox.showinfo("Button Clicked", "You clicked the button!")
-
 # Start playing the playlist
 def play_playlist(playlist_id, skip_ms=0):
     # Load the playlist and start playing it
+    print(playlist_id)
     sp.start_playback(device_id=DEVICE_ID, context_uri=f"spotify:playlist:{playlist_id}", position_ms=skip_ms)
 
 def play_anthems():
-    play_playlist(HOCKEY_ANTHEMS_ID, 40000)
+    play_playlist(anthems_id, 40000)
+
+def play_music():
+    play_playlist(music_id, 40000)
 
 def play_organ():
     play_playlist(ORGAN_LIST_ID)
@@ -116,15 +141,11 @@ root = tk.Tk()
 root.title("Hockey Player")
 root.geometry("150x600+0+0")  # Set window size
 
-# Add a label
-label = tk.Label(root, text="Go Järfälla!", font=("Arial", 14))
-label.pack(pady=20)
-
 # Add a button
-button_pause = tk.Button(root, text="Pause", command=pause_playback, font=("Arial", 18), bg="yellow")
-button_pause.config(height=2, width=7)
-button_pause.pack(pady=5)
-button_anthems = tk.Button(root, text="Play", command=play_anthems, font=("Arial", 18), bg="blue", fg="white")
+button_mute = tk.Button(root, text="Mute", command=pause_playback, font=("Arial", 18), bg="yellow")
+button_mute.config(height=2, width=7)
+button_mute.pack(pady=5)
+button_anthems = tk.Button(root, text="Game", command=play_anthems, font=("Arial", 18), bg="blue", fg="white")
 button_anthems.pack(pady=5)
 button_anthems.config(height=1, width=7)
 button_goal = tk.Button(root, text="GOAL", command=play_goal, font=("Arial", 18), bg="green")
@@ -138,25 +159,38 @@ button_organ.pack(pady=5)
 button_intro = tk.Button(root, text="Intro", command=play_intro, font=("Arial", 18))
 button_intro.config(height=1, width=7)
 button_intro.pack(pady=5)
+button_music = tk.Button(root, text="Music", command=play_music, font=("Arial", 18))
+button_music.config(height=1, width=7)
+button_music.pack(pady=5)
 button_auth= tk.Button(root, text="Auth", command=authenticate, font=("Arial", 18))
 button_auth.config(height=1, width=7)
 button_auth.pack(pady=5)
 default_button_color=orig_color=button_auth.cget("background")
 
-# Add another button with a different action
-exit_button = tk.Button(root, text="Exit", command=root.quit, font=("Arial", 18))
-exit_button.config(height=1, width=7)
-exit_button.pack(pady=5)
+# Create an Entry widget
+l1 = tk.Label(root, text="Anthems list", font=("Arial", 10))
+l1.pack(pady=1)
+edit1 = tk.Entry(root, width=50)
+edit1.pack(pady=1)
+edit1.delete(0, tk.END)  # Clear existing text
+edit1.insert(0, anthems_url)  # Insert new text at the beginning
+
+l2 = tk.Label(root, text="Music list", font=("Arial", 10))
+l2.pack(pady=1)
+edit2 = tk.Entry(root, width=50)
+edit2.pack(pady=1)
+edit2.delete(0, tk.END)  # Clear existing text
+edit2.insert(0, music_url)  # Insert new text at the beginning
 
 # Authenticate
+sp = None
 authenticate()
 
-sp = None
 # Get access token first (refresh if needed)
-access_token = get_access_token()
+#access_token = get_access_token()
 
 # Use the access token to create the Spotify client
-sp = spotipy.Spotify(auth=access_token)
+#sp = spotipy.Spotify(auth=access_token)
 sp.shuffle(state=True, device_id=DEVICE_ID)
 
 # Run the GUI event loop
